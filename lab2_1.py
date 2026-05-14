@@ -11,12 +11,6 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
-# Debug: print device info
-print("torch.cuda.is_available():", torch.cuda.is_available())
-print("Model device:", next(model.parameters()).device)
-print("Prefill input device:", next(iter(inputs_prefill.values())).device)
-print("Decode input device:", next(iter(inputs_decode.values())).device)
-
 # Prefill input (context len=1000)
 prompt_prefill = "Hello! " * 200
 inputs_prefill = tokenizer(prompt_prefill, return_tensors="pt", truncation=True, max_length=1000)
@@ -26,6 +20,12 @@ inputs_prefill = {k: v.to(device) for k, v in inputs_prefill.items()}
 prompt_decode = "Hello!"
 inputs_decode = tokenizer(prompt_decode, return_tensors="pt")
 inputs_decode = {k: v.to(device) for k, v in inputs_decode.items()}
+
+# Debug: print device info
+print("torch.cuda.is_available():", torch.cuda.is_available())
+print("Model device:", next(model.parameters()).device)
+print("Prefill input device:", next(iter(inputs_prefill.values())).device)
+print("Decode input device:", next(iter(inputs_decode.values())).device)
 
 # Helper to measure average latency
 def measure_latency(forward_fn, inputs, n_iter=5):
