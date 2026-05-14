@@ -7,8 +7,15 @@ model_name = "Qwen/Qwen3-4B-Thinking-2507"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
+
+# Debug: print device info
+print("torch.cuda.is_available():", torch.cuda.is_available())
+print("Model device:", next(model.parameters()).device)
+print("Prefill input device:", next(iter(inputs_prefill.values())).device)
+print("Decode input device:", next(iter(inputs_decode.values())).device)
 
 # Prefill input (context len=1000)
 prompt_prefill = "Hello! " * 200
