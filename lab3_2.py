@@ -14,7 +14,7 @@ except ImportError:
 # Task 1: IPEX INT8 Quantization
 # =============================
 
-model_name = "Qwen/Qwen3-4B-Thinking-2507"
+model_name = "Qwen/Qwen2.5-0.5B"
 
 torch.set_float32_matmul_precision("high")
 torch._dynamo.config.suppress_errors = True
@@ -34,8 +34,8 @@ model = model.to(device)
 model.eval()
 
 # Quantize model to INT8 with IPEX
-print("Quantizing model to BF16 with IPEX...")
-model = ipex.optimize(model, dtype=torch.bfloat16, inplace=True)
+print("Quantizing model to INT8 with IPEX...")
+model = ipex.optimize(model, dtype=torch.int8, inplace=True)
 
 # Prefill input (~1000 tokens)
 prompt_prefill = "Hello! " * 200
