@@ -90,6 +90,14 @@ def profile_inference(forward_fn, inputs, label, trace_file=None):
     print(f"\nProfiler summary for {label}:")
     print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=15))
 
+
+# --- Warmup phase ---
+print("Running warmup phase...")
+for _ in range(3):
+    forward_fn(**inputs_prefill)
+    forward_fn(**inputs_decode)
+print("Warmup complete.\n")
+
 print("Measuring latency and memory usage (prefill)...")
 prefill_latency, prefill_mem = measure_latency_and_memory(forward_fn, inputs_prefill)
 print(f"Prefill latency: {prefill_latency:.6f} s, Peak memory: {prefill_mem:.2f} MB")
