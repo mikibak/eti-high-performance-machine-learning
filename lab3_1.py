@@ -75,10 +75,25 @@ def measure_latency_and_memory(forward_fn, inputs, n_iter=10):
     avg_time = sum(times) / len(times)
     return avg_time, max_mem / (1024 ** 2)  # Return MB
 
+
+# --- Profiling FP16 baseline ---
+def profile_inference(forward_fn, inputs, label):
+    with torch.profiler.profile(
+        activities=[torch.profiler.ProfilerActivity.CPU],
+        record_shapes=True,
+        profile_memory=True,
+        with_stack=False,
+    ) as prof:
+        forward_fn(**inputs)
+    print(f"\nProfiler summary for {label}:")
+    print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=15))
+
 print("Measuring latency and memory usage (prefill)...")
 prefill_latency, prefill_mem = measure_latency_and_memory(forward_fn, inputs_prefill)
 print(f"Prefill latency: {prefill_latency:.6f} s, Peak memory: {prefill_mem:.2f} MB")
+profile_inference(forward_fn, inputs_prefill, "FP16 prefill")
 
 print("Measuring latency and memory usage (decode)...")
 decode_latency, decode_mem = measure_latency_and_memory(forward_fn, inputs_decode)
 print(f"Decode latency: {decode_latency:.6f} s, Peak memory: {decode_mem:.2f} MB")
+profile_inference(forward_fn, inputs_decode, "FP16 decode")
