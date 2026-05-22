@@ -3,30 +3,22 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import psutil
 import os
+import intel_extension_for_pytorch as ipex
 
-# Try to import IPEX
-try:
-    import intel_extension_for_pytorch as ipex
-except ImportError:
-    raise ImportError("Please install Intel Extension for PyTorch (IPEX): pip install intel-extension-for-pytorch")
-
-# =============================
 # Task 1: IPEX INT8 Quantization
-# =============================
 
-model_name = "Qwen/Qwen2.5-0.5B"
+device = torch.device("cpu")
 
-torch.set_float32_matmul_precision("high")
-torch._dynamo.config.suppress_errors = True
+# Model selection
+model_name = "Qwen/Qwen2.5-0.5B"  # or "Qwen/Qwen3-4B-Thinking-2507"
 
 print("Loading model...")
-
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-# Load model in FP16, then quantize to INT8
+# Load model in float32 for IPEX quantization
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    torch_dtype=torch.float16,
+    torch_dtype=torch.float32,
 )
 
 device = torch.device("cpu")
@@ -101,5 +93,3 @@ print(f"Decode latency (avg 3 steps): {avg_decode_latency:.6f} s, Peak memory: {
 
 print("\nSummary:")
 print(f"INT8 Quantized (IPEX) - Prefill: {prefill_latency:.6f} s, {prefill_mem:.2f} MB | Decode (3 steps avg): {avg_decode_latency:.6f} s, {max_decode_mem:.2f} MB")
-print("\nCompare these results with your FP16 baseline from lab3_1.py.")
-print("\nDiscuss: Did quantization help more with memory or runtime? How might AVX-VNNI support affect these results?")
