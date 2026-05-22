@@ -8,7 +8,7 @@ import os
 # Task 0: FP16 Baseline on CPU
 # =============================
 
-model_name = "Qwen/Qwen3-4B-Thinking-2507"
+model_name = "Qwen/Qwen2.5-0.5B"
 
 torch.set_float32_matmul_precision("high")
 
