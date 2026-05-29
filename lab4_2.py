@@ -3,6 +3,17 @@ import time
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from modelopt.torch.quantization import quantize
 
+import modelopt.torch.quantization as mtq
+
+def get_quant_config(recipe_name):
+	if recipe_name == "fp8":
+		return mtq.FP8_DEFAULT_CFG
+	elif recipe_name == "int8-smoothquant":
+		return mtq.INT8_SMOOTHQUANT_CFG
+	elif recipe_name == "int4-awq":
+		return mtq.INT4_AWQ_CFG
+	raise ValueError(f"Unknown recipe: {recipe_name}")
+
 def measure_inference(model, tokenizer, context_len=1000, num_new_tokens=3):
 	input_text = ("Once upon a time, " * ((context_len // 4) + 1))[:context_len]
 	inputs = tokenizer(input_text, return_tensors="pt", truncation=True, max_length=context_len)
@@ -22,7 +33,15 @@ def run_quantization_experiment(model_name, recipe_name, context_len=1000, num_n
 	model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16).cuda()
 	model.eval()
 	# Quantize
-	quantized_model = quantize(model, config={"method": recipe_name})
+	quant_config = get_quant_config(recipe_name)
+	
+	def calibrate_loop(m):
+		input_text = "Once upon a time, there was a quantization experiment."
+		inputs = tokenizer(input_text, return_tensors="pt").to("cuda")
+		with torch.no_grad():
+			m(**inputs)
+
+	quantized_model = quantize(model, config=quant_config, forward_loop=calibrate_loop)
 	quantized_model.eval()
 	del model
 	torch.cuda.empty_cache()
@@ -57,8 +76,8 @@ def main():
 		results[recipe_name] = {"time": q_time, "mem": q_mem}
 
 	# Summary
-	print("\n--- Summary ---")
-	print(f"{'Recipe':<18}{'Latency (s)':<15}{'Peak Mem (MB)':<15}")
+	print("\nSummary:")
+	print(f"{'Recipe':<18}{'Latency (s)':<15}{'Peak Memory (MB)':<15}")
 	print(f"{'FP16':<18}{fp16_time:<15.3f}{fp16_mem:<15.2f}")
 	for k, v in results.items():
 		print(f"{k:<18}{v['time']:<15.3f}{v['mem']:<15.2f}")
